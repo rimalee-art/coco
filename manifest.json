@@ -1,0 +1,19 @@
+{
+  "name": "마음쑥쑥 청소년상담사 3급",
+  "short_name": "마음쑥쑥",
+  "description": "청소년상담사 3급 기출문제 학습 앱",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f2e8",
+  "theme_color": "#174b3b",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

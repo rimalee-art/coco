@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학자-이론-키워드 연결 게임</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18212f;
+      --muted: #657186;
+      --line: #d9e0ea;
+      --paper: #f7f9fc;
+      --panel: rgba(255, 255, 255, 0.9);
+      --brand: #0c7a7a;
+      --brand-dark: #075f61;
+      --rose: #c94d67;
+      --gold: #b67505;
+      --blue: #2864b8;
+      --green: #14744e;
+      --shadow: 0 18px 45px rgba(22, 34, 50, 0.12);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      overflow-x: hidden;
+    }
+
+    #studyMap {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(130deg, rgba(12, 122, 122, 0.16), rgba(40, 100, 184, 0.08) 48%, rgba(201, 77, 103, 0.1)),
+        #f5f8fb;
+    }
+
+    .shell {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    header {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      padding: 22px 0 18px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      margin: 0 auto 10px;
+      padding: 6px 10px;
+      border: 1px solid rgba(12, 122, 122, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--brand-dark);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(31px, 5vw, 58px);
+      line-height: 1.03;
+      letter-spacing: 0;
+      text-align: center;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin: 14px auto 0;
+      color: #435064;
+      font-size: 17px;
+      line-height: 1.7;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      margin-top: 2px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 20px rgba(22, 34, 50, 0.08);
+    }
+
+    .status-board {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      margin: 12px 0 18px;
+    }
+
+    .stat {
+      min-height: 78px;
+      padding: 13px 14px;
+      border: 1px solid rgba(217, 224, 234, 0.9);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 8px 24px rgba(22, 34, 50, 0.07);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 12px;
+      border: 1px solid rgba(217, 224, 234, 0.9);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .segmented {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    button:focus-visible {
+      outline: 3px solid rgba(12, 122, 122, 0.35);
+      outline-offset: 2px;
+    }
+
+    .chip {
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #374458;
+    }
+
+    .chip.active {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .primary, .secondary, .ghost {
+      padding: 0 15px;
+    }
+
+    .primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .secondary {
+      border: 1px solid rgba(12, 122, 122, 0.35);
+      background: #e8f4f2;
+      color: var(--brand-dark);
+    }
+
+    .ghost {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #384559;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.5; transform: none; }
+
+    .game {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .lane {
+      border: 1px solid rgba(217, 224, 234, 0.94);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .lane h2 {
+      margin: 0;
+      padding: 15px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(246, 249, 252, 0.88);
+      font-size: 16px;
+    }
+
+    .cards {
+      display: grid;
+      gap: 9px;
+      padding: 12px;
+    }
+
+    .match-card {
+      min-height: 70px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-left: 5px solid transparent;
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      line-height: 1.45;
+      box-shadow: 0 5px 16px rgba(22, 34, 50, 0.06);
+      word-break: keep-all;
+    }
+
+    .match-card small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .match-card[data-lane="scholar"],
+    .match-card[data-lane="theory"] {
+      text-align: center;
+    }
+
+    .match-card.selected {
+      border-color: var(--blue);
+      border-left-color: var(--blue);
+      background: #edf5ff;
+    }
+
+    .match-card.locked {
+      border-color: rgba(20, 116, 78, 0.35);
+      border-left-color: var(--green);
+      background: #effaf3;
+      color: #183b2d;
+    }
+
+    .match-card.wrong {
+      border-color: rgba(201, 77, 103, 0.45);
+      border-left-color: var(--rose);
+      background: #fff0f3;
+      animation: shake 0.24s ease;
+    }
+
+    @keyframes shake {
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-2px); }
+    }
+
+    .feedback {
+      min-height: 98px;
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid rgba(217, 224, 234, 0.95);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .feedback strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 18px;
+    }
+
+    .feedback p {
+      margin: 0;
+      color: #405067;
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    .progress {
+      height: 10px;
+      margin-top: 14px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e1e7ef;
+    }
+
+    .progress span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand), var(--gold));
+      transition: width 0.25s ease;
+    }
+
+    .review {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .review-card {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.84);
+      line-height: 1.55;
+    }
+
+    .review-card b {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .review-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      header, .toolbar { grid-template-columns: 1fr; }
+      .home-link, .actions { justify-self: start; }
+      .status-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .game, .review { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .shell { width: min(100% - 20px, 1200px); padding-top: 12px; }
+      .status-board { grid-template-columns: 1fr; }
+      .toolbar { padding: 10px; }
+      .segmented, .actions { width: 100%; }
+      .chip, .primary, .secondary, .ghost { flex: 1 1 auto; }
+      .match-card { min-height: 62px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="studyMap" aria-hidden="true"></canvas>
+  <div class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">청소년상담사 3급 Part 3</p>
+        <h1>학자-이론-키워드 연결 게임</h1>
+        <p class="lead">청소년상담사 3급 기출 정리 자료와 기존 게임 자료의 주요 학자 73명을 바탕으로 학자명, 대표 이론, 핵심 키워드를 한 묶음으로 연결합니다.</p>
+      </div>
+      <a class="home-link" href="./index.html">← 이전화면</a>
+    </header>
+
+    <section class="status-board" aria-label="게임 현황">
+      <div class="stat"><span>라운드</span><strong id="roundStat">1/5</strong></div>
+    </section>
+
+    <section class="toolbar" aria-label="게임 설정">
+      <div class="segmented" role="group" aria-label="문항 수">
+        <button class="chip active" data-size="6">빠른 6묶음</button>
+        <button class="chip" data-size="10">표준 10묶음</button>
+        <button class="chip" data-size="73">전체 73묶음</button>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="nextBtn" disabled>다음문제</button>
+        <button class="primary" id="newBtn">새 게임</button>
+      </div>
+    </section>
+
+    <main class="game" aria-label="연결 게임판">
+      <section class="lane">
+        <h2>학자</h2>
+        <div class="cards" id="scholarLane"></div>
+      </section>
+      <section class="lane">
+        <h2>대표 이론</h2>
+        <div class="cards" id="theoryLane"></div>
+      </section>
+      <section class="lane">
+        <h2>키워드</h2>
+        <div class="cards" id="keywordLane"></div>
+      </section>
+    </main>
+
+    <section class="feedback" aria-live="polite">
+      <strong id="feedbackTitle">세 장을 골라 한 묶음을 완성하세요.</strong>
+      <p id="feedbackText">학자, 대표 이론, 키워드 카드가 모두 같은 학자에게 연결되면 자동으로 잠깁니다.</p>
+      <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+    </section>
+
+    <section class="review" id="reviewList" aria-label="완성한 연결 목록"></section>
+  </div>
+  <script>
+    const scholars = [
+      {
+        "id": "baltes",
+        "scholar": "발테스",
+        "english": "P. Baltes",
+        "theory": "성공적 노화 이론 (보상을 수반한 선택적 최적화 모델 / SOC 모델)",
+        "keywords": "선택(Selection), 최적화(Optimization), 보상(Compensation)",
+        "note": "발테스은(는) 성공적 노화 이론 (보상을 수반한 선택적 최적화 모델 / SOC 모델)와 관련해 선택(Selection), 최적화(Optimization), 보상(Compensation)를 중심으로 기억하세요."
+      },
+      {
+        "id": "piaget",
+        "scholar": "피아제",
+        "english": "J. Piaget",
+        "theory": "인지발달 단계 이론",
+        "keywords": "대상영속성, 자아중심성(세 산 모형), 동화·조절·평형화",
+        "note": "피아제은(는) 인지발달 단계 이론와 관련해 대상영속성, 자아중심성(세 산 모형), 동화·조절·평형화를 중심으로 기억하세요."
+      },
+      {
+        "id": "vygotsky",
+        "scholar": "비고츠키",
+        "english": "L. Vygotsky",
+        "theory": "사회문화적 인지발달 이론",
+        "keywords": "근접발달영역(ZPD), 비계설정(Scaffolding), 사적 언어/혼잣말",
+        "note": "비고츠키은(는) 사회문화적 인지발달 이론와 관련해 근접발달영역(ZPD), 비계설정(Scaffolding), 사적 언어/혼잣말를 중심으로 기억하세요."
+      },
+      {
+        "id": "lenneberg",
+        "scholar": "레느버그",
+        "english": "E. Lenneberg",
+        "theory": "언어생득설",
+        "keywords": "언어획득장치(LAD), 결정적 시기, 생득적 기제",
+        "note": "레느버그은(는) 언어생득설와 관련해 언어획득장치(LAD), 결정적 시기, 생득적 기제를 중심으로 기억하세요."
+      },
+      {
+        "id": "bowlby",
+        "scholar": "볼비",
+        "english": "J. Bowlby",
+        "theory": "애착 이론",
+        "keywords": "애착 형성 단계, 내적 작동 모델, 생존 본능 행동",
+        "note": "볼비은(는) 애착 이론와 관련해 애착 형성 단계, 내적 작동 모델, 생존 본능 행동를 중심으로 기억하세요."
+      },
+      {
+        "id": "ainsworth",
+        "scholar": "에인스워스",
+        "english": "M. Ainsworth",
+        "theory": "낯선 상황 실험 및 애착 유형 분류",
+        "keywords": "안정 애착, 회피 애착, 저항(불안정-저항) 애착",
+        "note": "에인스워스은(는) 낯선 상황 실험 및 애착 유형 분류와 관련해 안정 애착, 회피 애착, 저항(불안정-저항) 애착를 중심으로 기억하세요."
+      },
+      {
+        "id": "harlow",
+        "scholar": "할로우",
+        "english": "H. Harlow",
+        "theory": "원숭이 대리모 실험",
+        "keywords": "접촉 위안(Contact Comfort), 헝겊 어미, 신체적 접촉",
+        "note": "할로우은(는) 원숭이 대리모 실험와 관련해 접촉 위안(Contact Comfort), 헝겊 어미, 신체적 접촉를 중심으로 기억하세요."
+      },
+      {
+        "id": "erikson",
+        "scholar": "에릭슨",
+        "english": "E. Erikson",
+        "theory": "심리사회적 발달 8단계 이론",
+        "keywords": "자율성 vs 수치심, 근면성 vs 열등감, 정체감 vs 역할 혼미",
+        "note": "에릭슨은(는) 심리사회적 발달 8단계 이론와 관련해 자율성 vs 수치심, 근면성 vs 열등감, 정체감 vs 역할 혼미를 중심으로 기억하세요."
+      },
+      {
+        "id": "marcia",
+        "scholar": "마샤",
+        "english": "J. Marcia",
+        "theory": "정체감 지위 이론",
+        "keywords": "위기(Crisis), 전념(Commitment), 4대 지위(성취·유예·유실·혼미)",
+        "note": "마샤은(는) 정체감 지위 이론와 관련해 위기(Crisis), 전념(Commitment), 4대 지위(성취·유예·유실·혼미)를 중심으로 기억하세요."
+      },
+      {
+        "id": "kohlberg",
+        "scholar": "콜버그",
+        "english": "L. Kohlberg",
+        "theory": "도덕성 발달 3수준 6단계 이론",
+        "keywords": "전인습(벌/복종), 인습(착한 아이/법), 후인습(사회계약/보편윤리)",
+        "note": "콜버그은(는) 도덕성 발달 3수준 6단계 이론와 관련해 전인습(벌/복종), 인습(착한 아이/법), 후인습(사회계약/보편윤리)를 중심으로 기억하세요."
+      },
+      {
+        "id": "corey",
+        "scholar": "코리",
+        "english": "G. Corey",
+        "theory": "집단 발달 단계 모델",
+        "keywords": "초기 단계, 과도기 단계(저항/갈등), 작업 단계(깊은 개방)",
+        "note": "코리은(는) 집단 발달 단계 모델와 관련해 초기 단계, 과도기 단계(저항/갈등), 작업 단계(깊은 개방)를 중심으로 기억하세요."
+      },
+      {
+        "id": "yalom",
+        "scholar": "얄롬",
+        "english": "I. Yalom",
+        "theory": "집단 치료적 요인",
+        "keywords": "보평성, 이타주의, 집단 응집성",
+        "note": "얄롬은(는) 집단 치료적 요인와 관련해 보평성, 이타주의, 집단 응집성를 중심으로 기억하세요."
+      },
+      {
+        "id": "wubbolding",
+        "scholar": "우볼딩",
+        "english": "R. Wubbolding",
+        "theory": "현실치료 WDEP 상담 절차 모델",
+        "keywords": "Wants(바람), Doing(현재행동), Evaluation(자기평가)",
+        "note": "우볼딩은(는) 현실치료 WDEP 상담 절차 모델와 관련해 Wants(바람), Doing(현재행동), Evaluation(자기평가)를 중심으로 기억하세요."
+      },
+      {
+        "id": "moreno",
+        "scholar": "모레노",
+        "english": "J. L. Moreno",
+        "theory": "심리극 (Psychodrama)",
+        "keywords": "이중자아(Double), 거울(Mirroring), 역할 전환(Role Reversal)",
+        "note": "모레노은(는) 심리극 (Psychodrama)와 관련해 이중자아(Double), 거울(Mirroring), 역할 전환(Role Reversal)를 중심으로 기억하세요."
+      },
+      {
+        "id": "spearman",
+        "scholar": "스피어만",
+        "english": "C. Spearman",
+        "theory": "지능 2요인설",
+        "keywords": "일반요인($g$요인), 특수요인($s$요인), 공통적 지적 능력",
+        "note": "스피어만은(는) 지능 2요인설와 관련해 일반요인($g$요인), 특수요인($s$요인), 공통적 지적 능력를 중심으로 기억하세요."
+      },
+      {
+        "id": "cattell_horn",
+        "scholar": "카텔 & 혼",
+        "english": "Cattell & Horn",
+        "theory": "2차원 지능 구조 이론",
+        "keywords": "유동성 지능(선천적/연령 감소), 결정성 지능(후천적/문화·학습)",
+        "note": "카텔 & 혼은(는) 2차원 지능 구조 이론와 관련해 유동성 지능(선천적/연령 감소), 결정성 지능(후천적/문화·학습)를 중심으로 기억하세요."
+      },
+      {
+        "id": "gardner",
+        "scholar": "가드너",
+        "english": "H. Gardner",
+        "theory": "다중지능이론 (Multiple Intelligences)",
+        "keywords": "독립적 다중 지능, 8~9개 영역, 개별적 발달",
+        "note": "가드너은(는) 다중지능이론 (Multiple Intelligences)와 관련해 독립적 다중 지능, 8~9개 영역, 개별적 발달를 중심으로 기억하세요."
+      },
+      {
+        "id": "wechsler",
+        "scholar": "웩슬러",
+        "english": "D. Wechsler",
+        "theory": "편차 IQ 및 웩슬러 지능검사",
+        "keywords": "K-WISC-IV(4대 지표), K-WISC-V(5대 지표), 편차 IQ",
+        "note": "웩슬러은(는) 편차 IQ 및 웩슬러 지능검사와 관련해 K-WISC-IV(4대 지표), K-WISC-V(5대 지표), 편차 IQ를 중심으로 기억하세요."
+      },
+      {
+        "id": "sacks",
+        "scholar": "삭스",
+        "english": "J. M. Sacks",
+        "theory": "문장완성검사 (SCT)",
+        "keywords": "4대 영역(가족·성·대인관계·자기개념), 투사적 투영, 반응 속도",
+        "note": "삭스은(는) 문장완성검사 (SCT)와 관련해 4대 영역(가족·성·대인관계·자기개념), 투사적 투영, 반응 속도를 중심으로 기억하세요."
+      },
+      {
+        "id": "exner",
+        "scholar": "엑스너",
+        "english": "J. Exner",
+        "theory": "로샤(Rorschach) 종합체계",
+        "keywords": "반응위치, 결정요인(F/M/C 등), 형태질",
+        "note": "엑스너은(는) 로샤(Rorschach) 종합체계와 관련해 반응위치, 결정요인(F/M/C 등), 형태질를 중심으로 기억하세요."
+      },
+      {
+        "id": "freud",
+        "scholar": "프로이트",
+        "english": "S. Freud",
+        "theory": "정신분석 치료",
+        "keywords": "원초아·자아·초자아, 방어기제, 훈습(Working-through)",
+        "note": "프로이트은(는) 정신분석 치료와 관련해 원초아·자아·초자아, 방어기제, 훈습(Working-through)를 중심으로 기억하세요."
+      },
+      {
+        "id": "winnicott",
+        "scholar": "위니콧",
+        "english": "D. Winnicott",
+        "theory": "대상관계 이론",
+        "keywords": "충분히 좋은 어머니, 과도적 대상, 대상 항상성",
+        "note": "위니콧은(는) 대상관계 이론와 관련해 충분히 좋은 어머니, 과도적 대상, 대상 항상성를 중심으로 기억하세요."
+      },
+      {
+        "id": "adler",
+        "scholar": "아들러",
+        "english": "A. Adler",
+        "theory": "개인심리학",
+        "keywords": "사회적 관심, 생활양식 4유형, 수프에 침 뱉기",
+        "note": "아들러은(는) 개인심리학와 관련해 사회적 관심, 생활양식 4유형, 수프에 침 뱉기를 중심으로 기억하세요."
+      },
+      {
+        "id": "rogers",
+        "scholar": "로저스",
+        "english": "C. Rogers",
+        "theory": "인간중심 상담",
+        "keywords": "3대 태도(진솔성·무조건적 긍정·공감), 가치의 조건화, 자아실현",
+        "note": "로저스은(는) 인간중심 상담와 관련해 3대 태도(진솔성·무조건적 긍정·공감), 가치의 조건화, 자아실현를 중심으로 기억하세요."
+      },
+      {
+        "id": "perls",
+        "scholar": "펄스",
+        "english": "F. Perls",
+        "theory": "게슈탈트 치료",
+        "keywords": "전경과 배경, 미해결 과제, 접촉경계 혼란(내사·투사·반전 등)",
+        "note": "펄스은(는) 게슈탈트 치료와 관련해 전경과 배경, 미해결 과제, 접촉경계 혼란(내사·투사·반전 등)를 중심으로 기억하세요."
+      },
+      {
+        "id": "frankl",
+        "scholar": "프랭클",
+        "english": "V. Frankl",
+        "theory": "실존치료 / 의미치료 (Logotherapy)",
+        "keywords": "의미치료, 실존적 불안, 자유와 책임",
+        "note": "프랭클은(는) 실존치료 / 의미치료 (Logotherapy)와 관련해 의미치료, 실존적 불안, 자유와 책임를 중심으로 기억하세요."
+      },
+      {
+        "id": "ellis",
+        "scholar": "엘리스",
+        "english": "A. Ellis",
+        "theory": "합리적 정서행동치료 (REBT)",
+        "keywords": "ABCDE 모델, 비합리적 신념, 당위성 논박",
+        "note": "엘리스은(는) 합리적 정서행동치료 (REBT)와 관련해 ABCDE 모델, 비합리적 신념, 당위성 논박를 중심으로 기억하세요."
+      },
+      {
+        "id": "beck",
+        "scholar": "벡",
+        "english": "A. Beck",
+        "theory": "인지치료 (CBT)",
+        "keywords": "자동적 사고, 인지적 오류(과잉일반화/임의적 추론), 핵심신념",
+        "note": "벡은(는) 인지치료 (CBT)와 관련해 자동적 사고, 인지적 오류(과잉일반화/임의적 추론), 핵심신념를 중심으로 기억하세요."
+      },
+      {
+        "id": "linehan",
+        "scholar": "리네한",
+        "english": "M. Linehan",
+        "theory": "변증법적 행동치료 (DBT)",
+        "keywords": "수용과 변화, 4대 모듈(마음챙김·고통감내·정서조절·대인효능)",
+        "note": "리네한은(는) 변증법적 행동치료 (DBT)와 관련해 수용과 변화, 4대 모듈(마음챙김·고통감내·정서조절·대인효능)를 중심으로 기억하세요."
+      },
+      {
+        "id": "hayes",
+        "scholar": "헤이즈",
+        "english": "S. Hayes 등",
+        "theory": "수용전념치료 (ACT)",
+        "keywords": "인지적 탈융합(Defusion), 기꺼이 수용하기, 심리적 유연성",
+        "note": "헤이즈은(는) 수용전념치료 (ACT)와 관련해 인지적 탈융합(Defusion), 기꺼이 수용하기, 심리적 유연성를 중심으로 기억하세요."
+      },
+      {
+        "id": "berne",
+        "scholar": "에릭 번",
+        "english": "E. Berne",
+        "theory": "교류분석 (TA)",
+        "keywords": "자아상태(P-A-C), 자율성 3요소(자각·자발성·친밀성), 생애 각본",
+        "note": "에릭 번은(는) 교류분석 (TA)와 관련해 자아상태(P-A-C), 자율성 3요소(자각·자발성·친밀성), 생애 각본를 중심으로 기억하세요."
+      },
+      {
+        "id": "white_epston",
+        "scholar": "화이트 & 엡스턴",
+        "english": "M. White & D. Epston",
+        "theory": "이야기치료 (Narrative Therapy)",
+        "keywords": "문제의 외재화, 독특한 결과, 대안적 이야기 재작성",
+        "note": "화이트 & 엡스턴은(는) 이야기치료 (Narrative Therapy)와 관련해 문제의 외재화, 독특한 결과, 대안적 이야기 재작성를 중심으로 기억하세요."
+      },
+      {
+        "id": "sue_sue",
+        "scholar": "수 & 수",
+        "english": "Sue & Sue",
+        "theory": "다문화상담 역량 모델",
+        "keywords": "다문화 3대 역량(인식/태도·지식·기술), 사회적 옹호자(Advocate)",
+        "note": "수 & 수은(는) 다문화상담 역량 모델와 관련해 다문화 3대 역량(인식/태도·지식·기술), 사회적 옹호자(Advocate)를 중심으로 기억하세요."
+      },
+      {
+        "id": "pavlov",
+        "scholar": "파블로프",
+        "english": "I. Pavlov",
+        "theory": "고전적 조건형성",
+        "keywords": "자극 연합(UCS/CS), 자극 일반화/변별, 소거 및 자발적 회복",
+        "note": "파블로프은(는) 고전적 조건형성와 관련해 자극 연합(UCS/CS), 자극 일반화/변별, 소거 및 자발적 회복를 중심으로 기억하세요."
+      },
+      {
+        "id": "mowrer",
+        "scholar": "모러",
+        "english": "O. Mowrer",
+        "theory": "회피학습 이요인 이론",
+        "keywords": "공포 형성(고전적 조건화), 회피 행동 유지(조작적 조건화/부적 강화)",
+        "note": "모러은(는) 회피학습 이요인 이론와 관련해 공포 형성(고전적 조건화), 회피 행동 유지(조작적 조건화/부적 강화)를 중심으로 기억하세요."
+      },
+      {
+        "id": "skinner",
+        "scholar": "스키너",
+        "english": "B. F. Skinner",
+        "theory": "조작적 조건형성",
+        "keywords": "정적/부적 강화, 정적/부적 처벌, 4대 강화계획(FI·VI·FR·VR)",
+        "note": "스키너은(는) 조작적 조건형성와 관련해 정적/부적 강화, 정적/부적 처벌, 4대 강화계획(FI·VI·FR·VR)를 중심으로 기억하세요."
+      },
+      {
+        "id": "premack",
+        "scholar": "프리맥",
+        "english": "D. Premack",
+        "theory": "프리맥의 원리 (Premack's Principle)",
+        "keywords": "고빈도 선호 행동, 저빈도 행동 강화, 행동 강화물 활용",
+        "note": "프리맥은(는) 프리맥의 원리 (Premack's Principle)와 관련해 고빈도 선호 행동, 저빈도 행동 강화, 행동 강화물 활용를 중심으로 기억하세요."
+      },
+      {
+        "id": "bandura",
+        "scholar": "반두라",
+        "english": "A. Bandura",
+        "theory": "관찰학습 / 사회학습이론",
+        "keywords": "4단계(주의집중→파지→운동재현→동기화), 대리강화, 자기효능감",
+        "note": "반두라은(는) 관찰학습 / 사회학습이론와 관련해 4단계(주의집중→파지→운동재현→동기화), 대리강화, 자기효능감를 중심으로 기억하세요."
+      },
+      {
+        "id": "atkinson_shiffrin",
+        "scholar": "앳킨슨 & 쉬프린",
+        "english": "Atkinson & Shiffrin",
+        "theory": "다중기억 모델",
+        "keywords": "감각기억 → 단기기억 → 장기기억, 청킹(Chunking)",
+        "note": "앳킨슨 & 쉬프린은(는) 다중기억 모델와 관련해 감각기억 → 단기기억 → 장기기억, 청킹(Chunking)를 중심으로 기억하세요."
+      },
+      {
+        "id": "tulving",
+        "scholar": "툴빙",
+        "english": "E. Tulving",
+        "theory": "장기기억 구조 분류",
+        "keywords": "선언적 기억(의미기억·일화기억), 절차기억(암묵적 기억)",
+        "note": "툴빙은(는) 장기기억 구조 분류와 관련해 선언적 기억(의미기억·일화기억), 절차기억(암묵적 기억)를 중심으로 기억하세요."
+      },
+      {
+        "id": "tolman",
+        "scholar": "톨만",
+        "english": "E. Tolman",
+        "theory": "기호-게슈탈트 / 잠재학습 이론",
+        "keywords": "보상 없는 내적 학습, 인지도(Cognitive Map), 목적적 행동주의",
+        "note": "톨만은(는) 기호-게슈탈트 / 잠재학습 이론와 관련해 보상 없는 내적 학습, 인지도(Cognitive Map), 목적적 행동주의를 중심으로 기억하세요."
+      },
+      {
+        "id": "kohler",
+        "scholar": "쾰러",
+        "english": "W. Köhler",
+        "theory": "통찰학습 (Insight Learning)",
+        "keywords": "침팬지 술탄 실험, 인지적 재구성, '아하! 경험(Aha! Experience)'",
+        "note": "쾰러은(는) 통찰학습 (Insight Learning)와 관련해 침팬지 술탄 실험, 인지적 재구성, '아하! 경험(Aha! Experience)'를 중심으로 기억하세요."
+      },
+      {
+        "id": "seligman",
+        "scholar": "셀리그만",
+        "english": "M. Seligman",
+        "theory": "학습된 무기력 (Learned Helplessness)",
+        "keywords": "통제 불가능성 노출, 회피 포기, 귀인 패턴(내적·안정적·전반적)",
+        "note": "셀리그만은(는) 학습된 무기력 (Learned Helplessness)와 관련해 통제 불가능성 노출, 회피 포기, 귀인 패턴(내적·안정적·전반적)를 중심으로 기억하세요."
+      },
+      {
+        "id": "covington",
+        "scholar": "코빙튼",
+        "english": "M. Covington",
+        "theory": "자아가치 이론 (Self-Worth Theory)",
+        "keywords": "자아가치 보호, 자기불능화 전략(Self-Handicapping), 4개 성취유형",
+        "note": "코빙튼은(는) 자아가치 이론 (Self-Worth Theory)와 관련해 자아가치 보호, 자기불능화 전략(Self-Handicapping), 4개 성취유형를 중심으로 기억하세요."
+      },
+      {
+        "id": "yerkes_dodson_hebb",
+        "scholar": "예키스 & 도슨 / 헵",
+        "english": "Yerkes-Dodson / D. O. Hebb",
+        "theory": "최적 각성 수준 이론",
+        "keywords": "역U자형 관계, 과제 난이도별 각성(어려운 과제=낮은 각성), 망상활성계(RAS)",
+        "note": "예키스 & 도슨 / 헵은(는) 최적 각성 수준 이론와 관련해 역U자형 관계, 과제 난이도별 각성(어려운 과제=낮은 각성), 망상활성계(RAS)를 중심으로 기억하세요."
+      },
+      {
+        "id": "deci_ryan",
+        "scholar": "데시 & 라이언",
+        "english": "Deci & Ryan",
+        "theory": "자기결정성 이론 (Self-Determination Theory)",
+        "keywords": "무동기 → 외재적 동기(외적-내사-동일시-통합) → 내재적 동기",
+        "note": "데시 & 라이언은(는) 자기결정성 이론 (Self-Determination Theory)와 관련해 무동기 → 외재적 동기(외적-내사-동일시-통합) → 내재적 동기를 중심으로 기억하세요."
+      },
+      {
+        "id": "maslow",
+        "scholar": "매슬로우",
+        "english": "A. Maslow",
+        "theory": "욕구위계 이론",
+        "keywords": "결핍 욕구(생리·안전·소속·존중), 성장 욕구(자아실현)",
+        "note": "매슬로우은(는) 욕구위계 이론와 관련해 결핍 욕구(생리·안전·소속·존중), 성장 욕구(자아실현)를 중심으로 기억하세요."
+      },
+      {
+        "id": "csikszentmihalyi",
+        "scholar": "칙센트미하이",
+        "english": "M. Csikszentmihalyi",
+        "theory": "몰입 이론 (Flow Theory)",
+        "keywords": "몰입(Flow), 도전 과제 수준, 자신의 기술 수준 균형",
+        "note": "칙센트미하이은(는) 몰입 이론 (Flow Theory)와 관련해 몰입(Flow), 도전 과제 수준, 자신의 기술 수준 균형를 중심으로 기억하세요."
+      },
+      {
+        "id": "gagne",
+        "scholar": "가네",
+        "english": "R. Gagné",
+        "theory": "9가지 교수사태 및 학습 조건 이론",
+        "keywords": "내적 정보처리 과정, 9가지 외적 교수사태, 5대 학습 결과",
+        "note": "가네은(는) 9가지 교수사태 및 학습 조건 이론와 관련해 내적 정보처리 과정, 9가지 외적 교수사태, 5대 학습 결과를 중심으로 기억하세요."
+      },
+      {
+        "id": "thorndike",
+        "scholar": "손다이크",
+        "english": "E. Thorndike",
+        "theory": "시행착오설 / 연합학습 (Connectionism)",
+        "keywords": "S-R 결합, 학습 3대 법칙(효과의 법칙·연습의 법칙·준비성의 법칙), 동일요소설",
+        "note": "손다이크은(는) 시행착오설 / 연합학습 (Connectionism)와 관련해 S-R 결합, 학습 3대 법칙(효과의 법칙·연습의 법칙·준비성의 법칙), 동일요소설를 중심으로 기억하세요."
+      },
+      {
+        "id": "hull",
+        "scholar": "헐",
+        "english": "C. Hull",
+        "theory": "체계적 신행동주의 / 추동감소이론",
+        "keywords": "S-O-R 구조, 추동감소(Drive Reduction), 반응 잠재력 공식($_SE_R = _SH_R \times D \times K \times V$)",
+        "note": "헐은(는) 체계적 신행동주의 / 추동감소이론와 관련해 S-O-R 구조, 추동감소(Drive Reduction), 반응 잠재력 공식($_SE_R = _SH_R \times D \times K \times V$)를 중심으로 기억하세요."
+      },
+      {
+        "id": "james",
+        "scholar": "제임스",
+        "english": "W. James",
+        "theory": "기능주의 심리학 (Functionalism)",
+        "keywords": "의식의 흐름(Stream of Consciousness), 적응적 기능, 제임스-랑게 정서이론",
+        "note": "제임스은(는) 기능주의 심리학 (Functionalism)와 관련해 의식의 흐름(Stream of Consciousness), 적응적 기능, 제임스-랑게 정서이론를 중심으로 기억하세요."
+      },
+      {
+        "id": "wundt_titchener",
+        "scholar": "분트 & 티치너",
+        "english": "W. Wundt & E. Titchener",
+        "theory": "구성주의 심리학 (Structuralism)",
+        "keywords": "의식의 요소 분석(감각·느낌·상), 내관법(Introspection), 실험실 심리학",
+        "note": "분트 & 티치너은(는) 구성주의 심리학 (Structuralism)와 관련해 의식의 요소 분석(감각·느낌·상), 내관법(Introspection), 실험실 심리학를 중심으로 기억하세요."
+      },
+      {
+        "id": "bem",
+        "scholar": "펨",
+        "english": "S. Bem",
+        "theory": "성도식 이론",
+        "keywords": "성도식 형성, 성역할 발달, 양성성(Androgyny)",
+        "note": "펨은(는) 성도식 이론와 관련해 성도식 형성, 성역할 발달, 양성성(Androgyny)를 중심으로 기억하세요."
+      },
+      {
+        "id": "elkind",
+        "scholar": "엘킨드",
+        "english": "D. Elkind",
+        "theory": "청소년 자아중심성 이론",
+        "keywords": "상상적 청중, 개인적 우화, 극도 시선 민감",
+        "note": "엘킨드은(는) 청소년 자아중심성 이론와 관련해 상상적 청중, 개인적 우화, 극도 시선 민감를 중심으로 기억하세요."
+      },
+      {
+        "id": "bourdieu",
+        "scholar": "부르디외",
+        "english": "P. Bourdieu",
+        "theory": "문화재생산론",
+        "keywords": "아비투스(Habitus), 문화적 자본, 계급적 취향",
+        "note": "부르디외은(는) 문화재생산론와 관련해 아비투스(Habitus), 문화적 자본, 계급적 취향를 중심으로 기억하세요."
+      },
+      {
+        "id": "sutherland",
+        "scholar": "서덜랜드",
+        "english": "E. Sutherland",
+        "theory": "차별접촉 이론 (Differential Association)",
+        "keywords": "친밀한 또래 집단, 상호작용 학습, 비행 가치관 습득",
+        "note": "서덜랜드은(는) 차별접촉 이론 (Differential Association)와 관련해 친밀한 또래 집단, 상호작용 학습, 비행 가치관 습득를 중심으로 기억하세요."
+      },
+      {
+        "id": "hirschi",
+        "scholar": "허쉬",
+        "english": "T. Hirschi",
+        "theory": "사회통제 이론 / 사회유대 이론",
+        "keywords": "4대 사회 유대(애착·관여·참여·신념), 유대 약화 시 비행 발생",
+        "note": "허쉬은(는) 사회통제 이론 / 사회유대 이론와 관련해 4대 사회 유대(애착·관여·참여·신념), 유대 약화 시 비행 발생를 중심으로 기억하세요."
+      },
+      {
+        "id": "kolb",
+        "scholar": "콜브",
+        "english": "D. Kolb",
+        "theory": "경험학습 서클 (Experiential Learning)",
+        "keywords": "4단계 순환(구체적 경험 → 반성적 관찰 → 추상적 개념화 → 적극적 실험)",
+        "note": "콜브은(는) 경험학습 서클 (Experiential Learning)와 관련해 4단계 순환(구체적 경험 → 반성적 관찰 → 추상적 개념화 → 적극적 실험)를 중심으로 기억하세요."
+      },
+      {
+        "id": "dewey",
+        "scholar": "듀이",
+        "english": "J. Dewey",
+        "theory": "경험주의 교육론",
+        "keywords": "행동을 통한 학습(Learning by Doing), 반성적 사고, 실용주의",
+        "note": "듀이은(는) 경험주의 교육론와 관련해 행동을 통한 학습(Learning by Doing), 반성적 사고, 실용주의를 중심으로 기억하세요."
+      },
+      {
+        "id": "stufflebeam",
+        "scholar": "스터플빔",
+        "english": "D. Stufflebeam",
+        "theory": "CIPP 프로그램 평가 모형",
+        "keywords": "상황 평가(Context), 투입 평가(Input), 과정 평가(Process), 산출 평가(Product)",
+        "note": "스터플빔은(는) CIPP 프로그램 평가 모형와 관련해 상황 평가(Context), 투입 평가(Input), 과정 평가(Process), 산출 평가(Product)를 중심으로 기억하세요."
+      },
+      {
+        "id": "jung",
+        "scholar": "융",
+        "english": "C. Jung",
+        "theory": "분석심리학",
+        "keywords": "집단 무의식, 원형, 페르소나, 그림자, 아니마/아니무스, 개성화",
+        "note": "융은 분석심리학과 관련해 개인 무의식뿐 아니라 집단 무의식과 원형, 개성화 과정을 중심으로 기억하세요."
+      },
+      {
+        "id": "glasser",
+        "scholar": "글래서",
+        "english": "W. Glasser",
+        "theory": "현실치료 / 선택이론",
+        "keywords": "5가지 기본 욕구, 전체행동, 선택과 책임, WDEP",
+        "note": "글래서는 현실치료에서 과거보다 현재 선택과 책임, 통제 가능한 행동 변화를 강조했습니다."
+      },
+      {
+        "id": "satir",
+        "scholar": "사티어",
+        "english": "V. Satir",
+        "theory": "경험적 가족치료",
+        "keywords": "자아존중감, 의사소통 유형, 회유형·비난형·초이성형·산만형·일치형, 가족 조각",
+        "note": "사티어는 가족의 의사소통 방식과 자아존중감 회복을 중심으로 가족치료를 설명했습니다."
+      },
+      {
+        "id": "minuchin",
+        "scholar": "미누친",
+        "english": "S. Minuchin",
+        "theory": "구조적 가족치료",
+        "keywords": "가족 구조, 하위체계, 경계선, 밀착, 유리, 재구조화",
+        "note": "미누친은 가족 구조와 경계선을 조정해 역기능적 가족 상호작용을 재구조화하는 데 초점을 두었습니다."
+      },
+      {
+        "id": "bowen",
+        "scholar": "보웬",
+        "english": "M. Bowen",
+        "theory": "다세대 가족치료",
+        "keywords": "자기분화, 삼각관계, 가족투사과정, 다세대 전수, 가계도",
+        "note": "보웬은 가족 문제를 세대 간 정서 과정으로 보고 자기분화 수준을 핵심 개념으로 제시했습니다."
+      },
+      {
+        "id": "deshazer",
+        "scholar": "드 세이저",
+        "english": "S. de Shazer",
+        "theory": "해결중심 단기치료",
+        "keywords": "예외 질문, 기적 질문, 척도 질문, 대처 질문, 강점과 자원",
+        "note": "드 세이저는 문제 원인 분석보다 예외와 자원을 찾아 해결을 구성하는 상담 접근을 강조했습니다."
+      },
+      {
+        "id": "bronfenbrenner",
+        "scholar": "브론펜브레너",
+        "english": "U. Bronfenbrenner",
+        "theory": "생태체계이론",
+        "keywords": "미시체계, 중간체계, 외체계, 거시체계, 시간체계",
+        "note": "브론펜브레너는 발달을 개인과 여러 환경 체계의 상호작용 속에서 설명했습니다."
+      },
+      {
+        "id": "selman",
+        "scholar": "셀먼",
+        "english": "R. Selman",
+        "theory": "사회적 조망수용이론",
+        "keywords": "조망수용 발달, 타인 관점 이해, 제3자적 조망수용, 사회관습적 조망수용",
+        "note": "셀먼은 아동·청소년이 타인의 관점과 감정을 이해하는 능력이 단계적으로 발달한다고 보았습니다."
+      },
+      {
+        "id": "cattell",
+        "scholar": "레이먼드 카텔",
+        "english": "R. Cattell",
+        "theory": "지능 구조 이론 / 성격 요인 이론",
+        "keywords": "유동성 지능, 결정성 지능, 요인분석, 16PF",
+        "note": "레이먼드 카텔은 지능을 유동성 지능과 결정성 지능으로 구분하고 성격 요인을 요인분석으로 설명했습니다."
+      },
+      {
+        "id": "holland",
+        "scholar": "홀랜드",
+        "english": "J. Holland",
+        "theory": "직업성격유형 이론",
+        "keywords": "RIASEC, 실재형, 탐구형, 예술형, 사회형, 진취형, 관습형, 일치성",
+        "note": "홀랜드는 개인의 직업 성격 유형과 직업 환경의 일치가 진로 만족에 중요하다고 보았습니다."
+      },
+      {
+        "id": "super",
+        "scholar": "수퍼",
+        "english": "D. Super",
+        "theory": "전생애 진로발달이론",
+        "keywords": "성장기, 탐색기, 확립기, 유지기, 쇠퇴기, 자아개념, 생애 진로 무지개",
+        "note": "수퍼는 진로 발달을 평생에 걸친 자아개념의 발달과 실현 과정으로 설명했습니다."
+      },
+      {
+        "id": "krumboltz",
+        "scholar": "크럼볼츠",
+        "english": "J. Krumboltz",
+        "theory": "진로 선택 사회학습이론",
+        "keywords": "유전적 요인, 환경 조건, 학습 경험, 과제 접근 기술, 계획된 우연",
+        "note": "크럼볼츠는 진로 선택이 학습 경험과 환경적 기회, 우연한 사건의 활용을 통해 형성된다고 보았습니다."
+      }
+    ];
+
+    const state = {
+      size: 6,
+      deck: [],
+      queue: [],
+      selected: { scholar: null, theory: null, keyword: null },
+      matched: new Set(),
+      attempts: 0,
+      correct: 0,
+      streak: 0,
+      round: 0,
+      totalRounds: 5,
+      roundComplete: false
+    };
+
+    const els = {
+      scholarLane: document.getElementById("scholarLane"),
+      theoryLane: document.getElementById("theoryLane"),
+      keywordLane: document.getElementById("keywordLane"),
+      roundStat: document.getElementById("roundStat"),
+      feedbackTitle: document.getElementById("feedbackTitle"),
+      feedbackText: document.getElementById("feedbackText"),
+      progressBar: document.getElementById("progressBar"),
+      reviewList: document.getElementById("reviewList"),
+      nextBtn: document.getElementById("nextBtn"),
+      newBtn: document.getElementById("newBtn")
+    };
+
+    function shuffle(items) {
+      const mixed = [...items];
+      for (let i = mixed.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+      }
+      return mixed;
+    }
+
+    function drawDeck(size) {
+      return state.queue.splice(0, Math.min(size, state.queue.length));
+    }
+
+    function cardButton(item, lane) {
+      const button = document.createElement("button");
+      button.className = "match-card";
+      button.dataset.id = item.id;
+      button.dataset.lane = lane;
+      button.type = "button";
+
+      if (lane === "scholar") {
+        button.innerHTML = `${item.scholar}<small>${item.english}</small>`;
+      } else if (lane === "theory") {
+        button.textContent = item.theory;
+      } else {
+        button.textContent = item.keywords;
+      }
+
+      button.addEventListener("click", () => selectCard(button, item, lane));
+      return button;
+    }
+
+    function render() {
+      els.scholarLane.replaceChildren(...shuffle(state.deck).map(item => cardButton(item, "scholar")));
+      els.theoryLane.replaceChildren(...shuffle(state.deck).map(item => cardButton(item, "theory")));
+      els.keywordLane.replaceChildren(...shuffle(state.deck).map(item => cardButton(item, "keyword")));
+      state.selected = { scholar: null, theory: null, keyword: null };
+      paintLocked();
+      updateStats();
+      renderReview();
+    }
+
+    function selectCard(button, item, lane) {
+      if (state.matched.has(item.id)) return;
+      document.querySelectorAll(`.match-card[data-lane="${lane}"]`).forEach(card => card.classList.remove("selected", "wrong"));
+      button.classList.add("selected");
+      state.selected[lane] = item;
+      const picked = Object.values(state.selected).filter(Boolean);
+      if (picked.length === 3) checkMatch();
+    }
+
+    function checkMatch() {
+      const ids = Object.values(state.selected).map(item => item.id);
+      const isCorrect = ids.every(id => id === ids[0]);
+      state.attempts += 1;
+
+      if (isCorrect) {
+        const item = state.selected.scholar;
+        state.correct += 1;
+        state.streak += 1;
+        state.matched.add(item.id);
+        setFeedback("정답입니다.", `${item.scholar} - ${item.theory} - ${item.keywords}`);
+      } else {
+        state.streak = 0;
+        markWrong();
+        const anchor = state.selected.scholar || state.selected.theory || state.selected.keyword;
+        setFeedback("아직 연결이 맞지 않습니다.", anchor ? `${anchor.scholar}의 단서는 "${anchor.theory}"입니다.` : "한 번 더 조합해 보세요.");
+      }
+
+      state.selected = { scholar: null, theory: null, keyword: null };
+      setTimeout(() => {
+        document.querySelectorAll(".match-card").forEach(card => card.classList.remove("selected", "wrong"));
+        paintLocked();
+        updateStats();
+        renderReview();
+        if (state.matched.size === state.deck.length) completeRound();
+      }, 450);
+    }
+
+    function markWrong() {
+      Object.values(state.selected).filter(Boolean).forEach(item => {
+        document.querySelectorAll(`.match-card[data-id="${item.id}"]`).forEach(card => {
+          if (card.classList.contains("selected")) card.classList.add("wrong");
+        });
+      });
+    }
+
+    function paintLocked() {
+      document.querySelectorAll(".match-card").forEach(card => {
+        const locked = state.matched.has(card.dataset.id);
+        card.classList.toggle("locked", locked);
+        card.disabled = locked;
+      });
+    }
+
+    function updateStats() {
+      els.roundStat.textContent = `${state.round}/${state.totalRounds}`;
+      els.progressBar.style.width = `${(state.matched.size / state.deck.length) * 100}%`;
+    }
+
+    function setFeedback(title, text) {
+      els.feedbackTitle.textContent = title;
+      els.feedbackText.textContent = text;
+    }
+
+    function renderReview() {
+      const matched = state.deck.filter(item => state.matched.has(item.id));
+      els.reviewList.replaceChildren(...matched.map(item => {
+        const article = document.createElement("article");
+        article.className = "review-card";
+        article.innerHTML = `<b>${item.scholar}</b><span>${item.theory}</span><span>${item.keywords}</span>`;
+        return article;
+      }));
+    }
+
+    function completeRound() {
+      const accuracy = state.attempts ? Math.round((state.correct / state.attempts) * 100) : 0;
+      state.roundComplete = true;
+      els.nextBtn.disabled = false;
+      if (state.queue.length) {
+        setFeedback("라운드 완료", `정답률 ${accuracy}%입니다. 다음문제를 누르면 아직 출제되지 않은 학자들로 새 그룹이 나옵니다.`);
+      } else {
+        setFeedback(`${scholars.length}명 완료`, `정답률 ${accuracy}%입니다. 다음문제를 누르면 전체 학자를 다시 섞어 새 세트를 시작합니다.`);
+      }
+    }
+
+    function startSet(size = state.size) {
+      state.size = size;
+      state.queue = shuffle(scholars);
+      state.round = 0;
+      state.totalRounds = Math.ceil(scholars.length / size);
+      nextGroup();
+    }
+
+    function nextGroup() {
+      if (!state.roundComplete && state.round > 0) return;
+      if (!state.queue.length) {
+        state.queue = shuffle(scholars);
+        state.round = 0;
+      }
+      state.deck = drawDeck(state.size);
+      state.selected = { scholar: null, theory: null, keyword: null };
+      state.matched = new Set();
+      state.attempts = 0;
+      state.correct = 0;
+      state.streak = 0;
+      state.round += 1;
+      state.roundComplete = false;
+      els.nextBtn.disabled = true;
+      els.newBtn.textContent = "새 게임";
+      setFeedback("세 장을 골라 한 묶음을 완성하세요.", "학자, 대표 이론, 키워드 카드가 모두 같은 학자에게 연결되면 자동으로 잠깁니다.");
+      render();
+    }
+
+    document.querySelectorAll("[data-size]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-size]").forEach(chip => chip.classList.remove("active"));
+        button.classList.add("active");
+        startSet(Number(button.dataset.size));
+      });
+    });
+
+    els.nextBtn.addEventListener("click", nextGroup);
+    els.newBtn.addEventListener("click", () => startSet(state.size));
+
+    const canvas = document.getElementById("studyMap");
+    const ctx = canvas.getContext("2d");
+    let nodes = [];
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(window.innerWidth * ratio);
+      canvas.height = Math.floor(window.innerHeight * ratio);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      nodes = Array.from({ length: Math.min(54, Math.floor(window.innerWidth / 18)) }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.24,
+        vy: (Math.random() - 0.5) * 0.24,
+        r: Math.random() * 2 + 1.5
+      }));
+    }
+
+    function animateMap() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      nodes.forEach(node => {
+        node.x += node.vx;
+        node.y += node.vy;
+        if (node.x < 0 || node.x > window.innerWidth) node.vx *= -1;
+        if (node.y < 0 || node.y > window.innerHeight) node.vy *= -1;
+      });
+
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          const a = nodes[i];
+          const b = nodes[j];
+          const distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (distance < 155) {
+            ctx.strokeStyle = `rgba(12, 122, 122, ${0.13 * (1 - distance / 155)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      nodes.forEach(node => {
+        ctx.fillStyle = "rgba(40, 100, 184, 0.22)";
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animateMap);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    animateMap();
+    startSet(6);
+  </script>
+</body>
+</html>
